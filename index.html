@@ -1,124 +1,108 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Blurry vs Clear Document</title>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }
+    h1 { margin-bottom: 6px; }
+    p { margin-top: 0; color: #333; }
+    img { max-width: 360px; margin-top: 16px; border: 1px solid #ddd; border-radius: 6px; }
+    .result { font-size: 18px; margin-top: 18px; min-height: 48px; }
   </style>
 </head>
+
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width,initial-scale=1" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Blurry vs Clear Document&lt;/title&gt;</p>
-<p class="p2"><br></p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"&gt;&lt;/script&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>h1 { margin-bottom: 6px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>p { margin-top: 0; color: #333; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>img { max-width: 360px; margin-top: 16px; border: 1px solid #ddd; border-radius: 6px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.result { font-size: 18px; margin-top: 18px; min-height: 48px; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1&gt;Document Blur Quality Checker&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;p&gt;Upload a document image to check if it needs retake.&lt;/p&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;input type="file" id="imageUpload" accept="image/*" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;br /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;img id="preview" alt="" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="result" id="result"&gt;Loading model...&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// IMPORTANT: keep your model files in ./model/</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// ./model/model.json</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// ./model/metadata.json</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// ./model/weights.bin</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const MODEL_DIR = "./model/";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const INPUT_SIZE = 224; // Teachable Machine image models typically use 224x224</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const resultEl = document.getElementById("result");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const previewEl = document.getElementById("preview");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const uploadEl = document.getElementById("imageUpload");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>let model = null;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function loadModel() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// If WebGL causes issues on some machines, uncomment these two lines:</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// await tf.setBackend("cpu");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// await tf.ready();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>model = await tmImage.load(MODEL_DIR + "model.json", MODEL_DIR + "metadata.json");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>resultEl.innerText = "Model loaded. Upload an image.";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} catch (e) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>console.error(e);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>resultEl.innerText = "Model load failed. Open console (F12) for details.";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function imageToCanvas(img, size = INPUT_SIZE) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const canvas = document.createElement("canvas");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>canvas.width = size;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>canvas.height = size;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const ctx = canvas.getContext("2d");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>// Stretch to fit (simple + works reliably)</p>
-<p class="p1"><span class="Apple-converted-space">      </span>ctx.drawImage(img, 0, 0, size, size);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return canvas;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>uploadEl.addEventListener("change", (event) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const file = event.target.files &amp;&amp; event.target.files[0];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!file) return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const reader = new FileReader();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>reader.onload = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>previewEl.src = reader.result;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>};</p>
-<p class="p1"><span class="Apple-converted-space">      </span>reader.readAsDataURL(file);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>previewEl.onload = async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!model) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>resultEl.innerText = "Model still loading... try again in 2 seconds.";</p>
-<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>resultEl.innerText = "Running prediction...";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>const canvas = imageToCanvas(previewEl, INPUT_SIZE);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const preds = await model.predict(canvas);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>let best = preds[0];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 1; i &lt; preds.length; i++) {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>if (preds[i].probability &gt; best.probability) best = preds[i];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>resultEl.innerHTML =</p>
-<p class="p1"><span class="Apple-converted-space">          </span>`Prediction: &lt;b&gt;${best.className}&lt;/b&gt;&lt;br&gt;` +</p>
-<p class="p1"><span class="Apple-converted-space">          </span>`Confidence: ${(best.probability * 100).toFixed(2)}%`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} catch (e) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>console.error(e);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>resultEl.innerText = "Prediction failed. Open console (F12) for details.";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>loadModel();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <h1>Document Blur Quality Checker</h1>
+  <p>Upload a document image to check if it needs retake.</p>
+
+  <input type="file" id="imageUpload" accept="image/*" />
+  <br />
+  <img id="preview" alt="" />
+  <div class="result" id="result">Loading model...</div>
+
+  <script>
+    // IMPORTANT: keep your model files in ./model/
+    // ./model/model.json
+    // ./model/metadata.json
+    // ./model/weights.bin
+    const MODEL_DIR = "./model/";
+    const INPUT_SIZE = 224; // Teachable Machine image models typically use 224x224
+
+    const resultEl = document.getElementById("result");
+    const previewEl = document.getElementById("preview");
+    const uploadEl = document.getElementById("imageUpload");
+
+    let model = null;
+
+    async function loadModel() {
+      try {
+        // If WebGL causes issues on some machines, uncomment these two lines:
+        // await tf.setBackend("cpu");
+        // await tf.ready();
+
+        model = await tmImage.load(MODEL_DIR + "model.json", MODEL_DIR + "metadata.json");
+        resultEl.innerText = "Model loaded. Upload an image.";
+      } catch (e) {
+        console.error(e);
+        resultEl.innerText = "Model load failed. Open console (F12) for details.";
+      }
+    }
+
+    function imageToCanvas(img, size = INPUT_SIZE) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      // Stretch to fit (simple + works reliably)
+      ctx.drawImage(img, 0, 0, size, size);
+      return canvas;
+    }
+
+    uploadEl.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        previewEl.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    previewEl.onload = async () => {
+      if (!model) {
+        resultEl.innerText = "Model still loading... try again in 2 seconds.";
+        return;
+      }
+
+      try {
+        resultEl.innerText = "Running prediction...";
+
+        const canvas = imageToCanvas(previewEl, INPUT_SIZE);
+        const preds = await model.predict(canvas);
+
+        let best = preds[0];
+        for (let i = 1; i < preds.length; i++) {
+          if (preds[i].probability > best.probability) best = preds[i];
+        }
+
+        resultEl.innerHTML =
+          `Prediction: <b>${best.className}</b><br>` +
+          `Confidence: ${(best.probability * 100).toFixed(2)}%`;
+      } catch (e) {
+        console.error(e);
+        resultEl.innerText = "Prediction failed. Open console (F12) for details.";
+      }
+    };
+
+    loadModel();
+  </script>
 </body>
 </html>
